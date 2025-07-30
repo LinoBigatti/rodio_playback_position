@@ -1,0 +1,11 @@
+[package]
+name = "rodio_playback_position"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+cpal = "0.16.0"
+rodio = { version = "0.21.1", default-features = false }
+
+[features]
+default = []
