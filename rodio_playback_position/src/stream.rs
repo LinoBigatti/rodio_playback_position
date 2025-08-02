@@ -1,9 +1,10 @@
 use rodio::Source;
 
-use cpal::Sample;
+use cpal::{Sample, OutputCallbackInfo};
 use cpal::traits::DeviceTrait;
 
 use crate::OutputStreamConfig;
+use crate::SampleCounter;
 use crate::StreamError;
 
 pub fn open<S, E>(
@@ -11,7 +12,19 @@ pub fn open<S, E>(
     config: &OutputStreamConfig,
     mut source: S,
     error_callback: E,
-) -> Result<cpal::Stream, StreamError>
+) -> Result<(cpal::Stream, SampleCounter), StreamError>
+where
+    S: Source<Item = rodio::Sample> + Send + 'static,
+    E: FnMut(cpal::StreamError) + Send + 'static,
+{
+    open_with_sample_counter(device, config, source, error_callback)
+}
+pub fn open<S, E>(
+    device: &cpal::Device,
+    config: &OutputStreamConfig,
+    mut source: S,
+    error_callback: E,
+) -> Result<(cpal::Stream, SampleCounter), StreamError>
 where
     S: Source<Item = rodio::Sample> + Send + 'static,
     E: FnMut(cpal::StreamError) + Send + 'static,
