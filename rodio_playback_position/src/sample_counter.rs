@@ -1,34 +1,34 @@
+use std::sync::Arc;
+
 use cpal::StreamInstant;
 
-type SampleType = u64;
+use crate::{SampleType, BufferConsumer};
 
-pub struct SampleTimestamp {
-    instant: StreamInstant,
-    sample_n: SampleType,
+pub struct SampleCounter {
+    samples_per_second: u32,
+    nanos_per_sample: f32,
+
+    stream_start: Option<StreamInstant>,
+
+    sample_timestamp_buffer_consumer: BufferConsumer,
 }
 
-impl SampleTimestamp {
-    pub fn new(instant: StreamInstant, sample_n: SampleType) -> Self {
-        Self {
-            instant,
-            sample_n,
+impl SampleCounter {
+    pub fn new(sample_rate: u32, sample_timestamp_buffer_consumer: BufferConsumer) -> Arc<Self> {
+        let nanos_per_sample = 1_000_000_000.0 / sample_rate as f32;
+
+        Arc::new(Self {
+            samples_per_second: sample_rate,
+            nanos_per_sample,
+            stream_start: None,
+            sample_timestamp_buffer_consumer,
+        })
+    } 
+
+    pub fn get_samples(&self) -> SampleType {
+        match self.sample_timestamp_buffer_consumer.newest() {
+            Some(t) => t.sample_n,
+            None => 0,
         }
     }
 }
-
-pub type SampleCounter Arc<SampleCounterImpl>;
-
-pub struct SampleCounterImpl {
-    samples_per_second: u32,
-    nanos_per_sample: f32,
-    
-    stream_start: Option<StreamInstant>;
-    
-    /// The last confirmed sample reading: This should be in the past already, with a confirmed
-    /// sample count.
-    last_sample_timestamp: SampleTimestamp,
-
-    /// The next predicted sample timestamp: The timestamp at which cpal thinks it will deliver the
-    /// next batch of samples. This should be updated as soon as they are ready.
-    next_sample_timestamp: SampleTimestamp,
-} 

@@ -1,41 +1,53 @@
+use std::sync::Arc;
+
 use rodio::Source;
 
-use cpal::{Sample, OutputCallbackInfo};
-use cpal::traits::DeviceTrait;
+use cpal::Sample;
+use cpal::traits::{DeviceTrait, StreamTrait};
 
-use crate::OutputStreamConfig;
-use crate::SampleCounter;
-use crate::StreamError;
+use crate::{StreamError, OutputStreamConfig, SampleType, SampleCounter, SampleTimestamp, BufferProducer, BufferConsumer};
 
-pub fn open<S, E>(
-    device: &cpal::Device,
-    config: &OutputStreamConfig,
-    mut source: S,
-    error_callback: E,
-) -> Result<(cpal::Stream, SampleCounter), StreamError>
-where
-    S: Source<Item = rodio::Sample> + Send + 'static,
-    E: FnMut(cpal::StreamError) + Send + 'static,
-{
-    open_with_sample_counter(device, config, source, error_callback)
+/// A handle for accessing and communicating with the audio stream.
+///
+/// If this struct is dropped, playback will stop.
+pub struct StreamHandle {
+    _handle: cpal::Stream,
+    sample_counter: Arc<SampleCounter>,
 }
+
+impl StreamHandle {
+    /// Returns a reference to the sample counter tracking this stream.
+    pub fn sample_counter(&self) -> Arc<SampleCounter> {
+        self.sample_counter.clone()
+    }
+}
+
 pub fn open<S, E>(
     device: &cpal::Device,
     config: &OutputStreamConfig,
     mut source: S,
     error_callback: E,
-) -> Result<(cpal::Stream, SampleCounter), StreamError>
+) -> Result<StreamHandle, StreamError>
 where
     S: Source<Item = rodio::Sample> + Send + 'static,
     E: FnMut(cpal::StreamError) + Send + 'static,
 {
+    let (mut prod, cons): (BufferProducer, BufferConsumer) = crate::new_sample_timestamp_buffer(100);
+    let sample_counter = SampleCounter::new(config.sample_rate as u32, cons);
+
     let sample_format = config.sample_format;
+    let channels = config.channel_count as SampleType;
     let config = config.into();
 
-    match sample_format {
+    let mut sample_n: SampleType = 0;
+
+    let handle = match sample_format {
         cpal::SampleFormat::F32 => device.build_output_stream::<f32, _, _>(
             &config,
-            move |data, _| {
+            move |data, info| {
+                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                sample_n += data.len() as SampleType / channels;
+
                 data.iter_mut()
                     .for_each(|d| *d = source.next().unwrap_or(0f32))
             },
@@ -44,7 +56,10 @@ where
         ),
         cpal::SampleFormat::F64 => device.build_output_stream::<f64, _, _>(
             &config,
-            move |data, _| {
+            move |data, info| {
+                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                sample_n += data.len() as SampleType / channels;
+
                 data.iter_mut()
                     .for_each(|d| *d = source.next().map(Sample::from_sample).unwrap_or(0f64))
             },
@@ -53,7 +68,10 @@ where
         ),
         cpal::SampleFormat::I8 => device.build_output_stream::<i8, _, _>(
             &config,
-            move |data, _| {
+            move |data, info| {
+                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                sample_n += data.len() as SampleType / channels;
+
                 data.iter_mut()
                     .for_each(|d| *d = source.next().map(Sample::from_sample).unwrap_or(0i8))
             },
@@ -62,7 +80,10 @@ where
         ),
         cpal::SampleFormat::I16 => device.build_output_stream::<i16, _, _>(
             &config,
-            move |data, _| {
+            move |data, info| {
+                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                sample_n += data.len() as SampleType / channels;
+
                 data.iter_mut()
                     .for_each(|d| *d = source.next().map(Sample::from_sample).unwrap_or(0i16))
             },
@@ -71,7 +92,10 @@ where
         ),
         cpal::SampleFormat::I32 => device.build_output_stream::<i32, _, _>(
             &config,
-            move |data, _| {
+            move |data, info| {
+                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                sample_n += data.len() as SampleType / channels;
+
                 data.iter_mut()
                     .for_each(|d| *d = source.next().map(Sample::from_sample).unwrap_or(0i32))
             },
@@ -80,7 +104,10 @@ where
         ),
         cpal::SampleFormat::I64 => device.build_output_stream::<i64, _, _>(
             &config,
-            move |data, _| {
+            move |data, info| {
+                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                sample_n += data.len() as SampleType / channels;
+
                 data.iter_mut()
                     .for_each(|d| *d = source.next().map(Sample::from_sample).unwrap_or(0i64))
             },
@@ -89,7 +116,10 @@ where
         ),
         cpal::SampleFormat::U8 => device.build_output_stream::<u8, _, _>(
             &config,
-            move |data, _| {
+            move |data, info| {
+                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                sample_n += data.len() as SampleType / channels;
+
                 data.iter_mut().for_each(|d| {
                     *d = source
                         .next()
@@ -102,7 +132,10 @@ where
         ),
         cpal::SampleFormat::U16 => device.build_output_stream::<u16, _, _>(
             &config,
-            move |data, _| {
+            move |data, info| {
+                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                sample_n += data.len() as SampleType / channels;
+
                 data.iter_mut().for_each(|d| {
                     *d = source
                         .next()
@@ -115,7 +148,10 @@ where
         ),
         cpal::SampleFormat::U32 => device.build_output_stream::<u32, _, _>(
             &config,
-            move |data, _| {
+            move |data, info| {
+                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                sample_n += data.len() as SampleType / channels;
+
                 data.iter_mut().for_each(|d| {
                     *d = source
                         .next()
@@ -128,7 +164,10 @@ where
         ),
         cpal::SampleFormat::U64 => device.build_output_stream::<u64, _, _>(
             &config,
-            move |data, _| {
+            move |data, info| {
+                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                sample_n += data.len() as SampleType / channels;
+
                 data.iter_mut().for_each(|d| {
                     *d = source
                         .next()
@@ -141,5 +180,15 @@ where
         ),
         _ => return Err(StreamError::UnsupportedSampleFormat),
     }
-    .map_err(StreamError::BuildStreamError)
+    .map_err(StreamError::BuildStreamError)?;
+
+    // Some platforms do not start playback as soon as we create the stream.
+    handle.play().map_err(StreamError::PlayStreamError)?;
+
+    Ok(
+        StreamHandle {
+            _handle: handle,
+            sample_counter,
+        }
+    )
 }
