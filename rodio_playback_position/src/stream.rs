@@ -1,11 +1,13 @@
 use std::time::Instant;
 
+use rtsan_standalone::nonblocking;
+
 use rodio::Source;
 
 use cpal::Sample;
 use cpal::traits::{DeviceTrait, StreamTrait};
 
-use crate::{StreamError, OutputStreamConfig, SampleType, SampleCounter, SampleTimestamp, BufferProducer, BufferConsumer};
+use crate::{StreamError, OutputStreamConfig, SampleType, SampleTimestamp, BufferProducer, BufferConsumer};
 
 /// A handle for accessing and communicating with the audio stream.
 ///
@@ -14,6 +16,7 @@ pub struct StreamHandle {
     _handle: cpal::Stream,
     config: OutputStreamConfig,
     start_time: Instant,
+    last_sample_number: SampleType,
     sample_timestamp_consumer: BufferConsumer,
 }
 
@@ -25,14 +28,22 @@ impl StreamHandle {
 
         let timestamp_data = self.sample_timestamp_consumer.newest();
 
-        timestamp_data.interpolate(timestamp_now, self.config.sample_rate as u64)
+        let sample_n = timestamp_data.interpolate(timestamp_now, self.config.sample_rate);
+
+        // Make sure samples are always increasing to prevent jitter.
+        if self.last_sample_number > sample_n {
+            self.last_sample_number = sample_n;
+        }
+
+        self.last_sample_number
     }
 }
 
 #[inline]
+#[nonblocking]
 fn update_playback_position(prod: &mut BufferProducer, start_time: Instant, sample_n: SampleType, info: &cpal::OutputCallbackInfo) {
     let now = Instant::now();
-    let timestamp_now = now.duration_since(now);
+    let timestamp_now = now.duration_since(start_time);
 
     let latency = info.timestamp().playback.duration_since(&info.timestamp().callback).unwrap_or_default();
 
@@ -56,7 +67,6 @@ where
     E: FnMut(cpal::StreamError) + Send + 'static,
 {
     let start_time = Instant::now();
-    let _start_time = start_time.clone();
     
     let (mut prod, mut cons): (BufferProducer, BufferConsumer) = crate::new_sample_timestamp_buffer();
 
@@ -70,7 +80,7 @@ where
         cpal::SampleFormat::F32 => device.build_output_stream::<f32, _, _>(
             &_config,
             move |data, info| {
-                update_playback_position(&mut prod, _start_time, sample_n, info);
+                update_playback_position(&mut prod, start_time, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut()
@@ -82,7 +92,7 @@ where
         cpal::SampleFormat::F64 => device.build_output_stream::<f64, _, _>(
             &_config,
             move |data, info| {
-                update_playback_position(&mut prod, _start_time, sample_n, info);
+                update_playback_position(&mut prod, start_time, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut()
@@ -94,7 +104,7 @@ where
         cpal::SampleFormat::I8 => device.build_output_stream::<i8, _, _>(
             &_config,
             move |data, info| {
-                update_playback_position(&mut prod, _start_time, sample_n, info);
+                update_playback_position(&mut prod, start_time, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut()
@@ -106,7 +116,7 @@ where
         cpal::SampleFormat::I16 => device.build_output_stream::<i16, _, _>(
             &_config,
             move |data, info| {
-                update_playback_position(&mut prod, _start_time, sample_n, info);
+                update_playback_position(&mut prod, start_time, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut()
@@ -118,7 +128,7 @@ where
         cpal::SampleFormat::I32 => device.build_output_stream::<i32, _, _>(
             &_config,
             move |data, info| {
-                update_playback_position(&mut prod, _start_time, sample_n, info);
+                update_playback_position(&mut prod, start_time, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut()
@@ -130,7 +140,7 @@ where
         cpal::SampleFormat::I64 => device.build_output_stream::<i64, _, _>(
             &_config,
             move |data, info| {
-                update_playback_position(&mut prod, _start_time, sample_n, info);
+                update_playback_position(&mut prod, start_time, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut()
@@ -142,7 +152,7 @@ where
         cpal::SampleFormat::U8 => device.build_output_stream::<u8, _, _>(
             &_config,
             move |data, info| {
-                update_playback_position(&mut prod, _start_time, sample_n, info);
+                update_playback_position(&mut prod, start_time, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut().for_each(|d| {
@@ -158,7 +168,7 @@ where
         cpal::SampleFormat::U16 => device.build_output_stream::<u16, _, _>(
             &_config,
             move |data, info| {
-                update_playback_position(&mut prod, _start_time, sample_n, info);
+                update_playback_position(&mut prod, start_time, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut().for_each(|d| {
@@ -174,7 +184,7 @@ where
         cpal::SampleFormat::U32 => device.build_output_stream::<u32, _, _>(
             &_config,
             move |data, info| {
-                update_playback_position(&mut prod, _start_time, sample_n, info);
+                update_playback_position(&mut prod, start_time, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut().for_each(|d| {
@@ -190,7 +200,7 @@ where
         cpal::SampleFormat::U64 => device.build_output_stream::<u64, _, _>(
             &_config,
             move |data, info| {
-                update_playback_position(&mut prod, _start_time, sample_n, info);
+                update_playback_position(&mut prod, start_time, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut().for_each(|d| {
@@ -213,8 +223,9 @@ where
     Ok(
         StreamHandle {
             _handle: handle,
-            config: config.clone(),
+            config: config.to_owned(),
             start_time,
+            last_sample_number: 0,
             sample_timestamp_consumer: cons,
         }
     )

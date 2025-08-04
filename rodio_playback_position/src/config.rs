@@ -4,7 +4,8 @@ use cpal::{BufferSize, SampleFormat, StreamConfig};
 
 const HZ_48000: u32 = 48_000;
 
-/// Describes the output stream's configuration
+/// Describes the output stream's configuration. We have to reimplement this here because rodio
+/// doesn't include this struct when the `playback` feature is disabled.
 #[derive(Copy, Clone, Debug)]
 pub struct OutputStreamConfig {
     pub channel_count: ChannelCount,

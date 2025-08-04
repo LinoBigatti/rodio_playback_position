@@ -2,7 +2,14 @@ use std::time::{Instant, Duration};
 
 use crate::SampleType;
 
+const NANOS_PER_SEC: SampleType = 1_000_000_000;
+
 #[derive(Default, Clone, Copy, Debug)]
+/// Timestamp data for an audio playback event. This type is created when the audio thread produces
+/// a batch of samples. 
+///
+/// You should not create this type directly. Instead, use [StreamHandle::sample_count](crate::StreamHandle::sample_count)
+/// to get an interpolated sample position.
 pub struct SampleTimestamp {
     /// This timestamp represents a duration since some unspecified start time occurring either 
     /// before or equal to the moment the stream from which it was created begins.
@@ -27,14 +34,15 @@ impl SampleTimestamp {
     }
 
     #[inline]
-    pub fn interpolate(&self, current_timestamp: Duration, sample_rate: u64) -> SampleType {
+    pub fn interpolate(&self, current_timestamp: Duration, sample_rate: u32) -> SampleType {
+        let _sample_rate = sample_rate as SampleType;
+
         let mut sample_n: SampleType = self.sample_n;
 
-        let time_diff = self.timestamp.abs_diff(current_timestamp);
-
-        let nanos_per_sample = 1_000_000_000 / sample_rate;
-
-        let time_diff_samples = time_diff.as_secs() * sample_rate + time_diff.subsec_nanos() as u64 / nanos_per_sample;
+        // Potentially truncating if SampleType is not u128. Unlikely to appear in real life
+        // scenarios, as the time difference should usually be less than a second.
+        let time_diff_nanos = self.timestamp.abs_diff(current_timestamp).as_nanos() as SampleType;
+        let time_diff_samples = _sample_rate * time_diff_nanos / NANOS_PER_SEC;
 
         if current_timestamp < self.timestamp {
             sample_n -= time_diff_samples;
@@ -42,8 +50,16 @@ impl SampleTimestamp {
             sample_n += time_diff_samples;
         }
 
-        let latency_samples = self.latency.as_secs() * sample_rate + self.latency.subsec_nanos() as u64 / nanos_per_sample;
-        sample_n += latency_samples;
+        // Same truncating considerations as above. Even more unlikely to happen in real life.
+        let latency_samples = _sample_rate * self.latency.as_nanos() as SampleType / NANOS_PER_SEC;
+
+        // Apply audio latency.
+        if sample_n > latency_samples {
+            sample_n -= latency_samples;
+        } else {
+            // The stream data has not started playing in the output device yet.
+            return 0;
+        }
 
         sample_n
     }

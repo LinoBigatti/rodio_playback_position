@@ -25,7 +25,9 @@ pub struct BufferConsumer {
 impl BufferConsumer {
     /// Returns a reference to the most recent item in the buffer.
     pub fn newest(&mut self) -> &SampleTimestamp {
-        self.consumer.read()
+        let v = self.consumer.read();
+        println!("SAMPLE TIMESTAMP EVENT: {:?}", v);
+        v
     }
 }
 
