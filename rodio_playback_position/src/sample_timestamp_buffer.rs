@@ -26,7 +26,7 @@ impl BufferConsumer {
     /// Returns a reference to the most recent item in the buffer.
     pub fn newest(&mut self) -> &SampleTimestamp {
         let v = self.consumer.read();
-        println!("SAMPLE TIMESTAMP EVENT: {:?}", v);
+        println!("SAMPLE TIMESTAMP EVENT: {v:?}");
         v
     }
 }
@@ -36,10 +36,7 @@ impl BufferConsumer {
 /// # Returns
 ///
 /// A tuple containing the producer and consumer ends of the buffer.
-pub fn new_sample_timestamp_buffer() -> (
-    BufferProducer,
-    BufferConsumer,
-) {
+pub fn new_sample_timestamp_buffer() -> (BufferProducer, BufferConsumer) {
     let default_element = SampleTimestamp::default();
     let (producer, consumer) = triple_buffer::triple_buffer(&default_element);
 

@@ -7,7 +7,9 @@ use rodio::Source;
 use cpal::Sample;
 use cpal::traits::{DeviceTrait, StreamTrait};
 
-use crate::{StreamError, OutputStreamConfig, SampleType, SampleTimestamp, BufferProducer, BufferConsumer};
+use crate::{
+    BufferConsumer, BufferProducer, OutputStreamConfig, SampleTimestamp, SampleType, StreamError,
+};
 
 /// A handle for accessing and communicating with the audio stream.
 ///
@@ -41,19 +43,22 @@ impl StreamHandle {
 
 #[inline]
 #[nonblocking]
-fn update_playback_position(prod: &mut BufferProducer, start_time: Instant, sample_n: SampleType, info: &cpal::OutputCallbackInfo) {
+fn update_playback_position(
+    prod: &mut BufferProducer,
+    start_time: Instant,
+    sample_n: SampleType,
+    info: &cpal::OutputCallbackInfo,
+) {
     let now = Instant::now();
     let timestamp_now = now.duration_since(start_time);
 
-    let latency = info.timestamp().playback.duration_since(&info.timestamp().callback).unwrap_or_default();
+    let latency = info
+        .timestamp()
+        .playback
+        .duration_since(&info.timestamp().callback)
+        .unwrap_or_default();
 
-    prod.update(
-        SampleTimestamp::new(
-            timestamp_now,
-            latency,
-            sample_n,
-        )
-    );
+    prod.update(SampleTimestamp::new(timestamp_now, latency, sample_n));
 }
 
 pub fn open<S, E>(
@@ -67,8 +72,8 @@ where
     E: FnMut(cpal::StreamError) + Send + 'static,
 {
     let start_time = Instant::now();
-    
-    let (mut prod, mut cons): (BufferProducer, BufferConsumer) = crate::new_sample_timestamp_buffer();
+
+    let (mut prod, cons): (BufferProducer, BufferConsumer) = crate::new_sample_timestamp_buffer();
 
     let sample_format = config.sample_format;
     let channels = config.channel_count as SampleType;
@@ -220,13 +225,11 @@ where
     // Some platforms do not start playback as soon as we create the stream.
     handle.play().map_err(StreamError::PlayStreamError)?;
 
-    Ok(
-        StreamHandle {
-            _handle: handle,
-            config: config.to_owned(),
-            start_time,
-            last_sample_number: 0,
-            sample_timestamp_consumer: cons,
-        }
-    )
+    Ok(StreamHandle {
+        _handle: handle,
+        config: config.to_owned(),
+        start_time,
+        last_sample_number: 0,
+        sample_timestamp_consumer: cons,
+    })
 }

@@ -1,4 +1,4 @@
-use std::time::{Instant, Duration};
+use std::time::Duration;
 
 use crate::SampleType;
 
@@ -6,12 +6,12 @@ const NANOS_PER_SEC: SampleType = 1_000_000_000;
 
 #[derive(Default, Clone, Copy, Debug)]
 /// Timestamp data for an audio playback event. This type is created when the audio thread produces
-/// a batch of samples. 
+/// a batch of samples.
 ///
 /// You should not create this type directly. Instead, use [StreamHandle::sample_count](crate::StreamHandle::sample_count)
 /// to get an interpolated sample position.
 pub struct SampleTimestamp {
-    /// This timestamp represents a duration since some unspecified start time occurring either 
+    /// This timestamp represents a duration since some unspecified start time occurring either
     /// before or equal to the moment the stream from which it was created begins.
     timestamp: Duration,
 
@@ -20,7 +20,7 @@ pub struct SampleTimestamp {
 
     /// The predicted latency of the audio stream. This is the difference between when the samples
     /// are sent to be processend and the moment they will be played back by the output device.
-    latency: Duration
+    latency: Duration,
 }
 
 impl SampleTimestamp {
@@ -64,4 +64,3 @@ impl SampleTimestamp {
         sample_n
     }
 }
-
