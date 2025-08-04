@@ -24,12 +24,13 @@ impl SampleCounter {
     } 
 
     pub fn get_samples(&mut self) -> SampleType {
-        let latest_sample_timestamp = self.sample_timestamp_buffer_consumer.newest();
+        //let latest_sample_timestamp = self.sample_timestamp_buffer_consumer.newest();
         
-        latest_sample_timestamp.sample_n
+        //latest_sample_timestamp.sample_n
 
         //if self.stream_start.is_none() {
             //self.stream_start = Some(latest_sample_timestamp)
         //}
+        0
     }
 }

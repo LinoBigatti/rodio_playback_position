@@ -29,26 +29,16 @@ impl BufferConsumer {
     }
 }
 
-/// Creates a new sample timestamp ring buffer.
-///
-/// # Arguments
-///
-/// * `capacity` - The capacity of the ring buffer.
+/// Creates a new sample timestamp triple buffer.
 ///
 /// # Returns
 ///
-/// A tuple containing the producer and consumer ends of the ring buffer.
-pub fn new_sample_timestamp_buffer(
-    capacity: usize,
-    start_time: std::time::Instant,
-) -> (
+/// A tuple containing the producer and consumer ends of the buffer.
+pub fn new_sample_timestamp_buffer() -> (
     BufferProducer,
     BufferConsumer,
 ) {
-    let default_element = SampleTimestamp::new(
-        start_time,
-        0,
-    );
+    let default_element = SampleTimestamp::default();
     let (producer, consumer) = triple_buffer::triple_buffer(&default_element);
 
     (BufferProducer { producer }, BufferConsumer { consumer })
