@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, atomic::AtomicU64};
 
 use rodio::Source;
 
@@ -12,14 +12,28 @@ use crate::{StreamError, OutputStreamConfig, SampleType, SampleCounter, SampleTi
 /// If this struct is dropped, playback will stop.
 pub struct StreamHandle {
     _handle: cpal::Stream,
-    sample_counter: Arc<SampleCounter>,
+    sample_counter: Arc<AtomicU64>,
+    sample_timestamp_consumer: BufferConsumer,
 }
 
 impl StreamHandle {
     /// Returns a reference to the sample counter tracking this stream.
-    pub fn sample_counter(&self) -> Arc<SampleCounter> {
+    pub fn sample_counter(&mut self) -> Arc<AtomicU64> {
+        let timestamp = self.sample_timestamp_consumer.newest();
+        self.sample_counter.store(timestamp.sample_n, std::sync::atomic::Ordering::SeqCst);
+        
         self.sample_counter.clone()
     }
+}
+
+#[inline]
+fn update_playback_position(prod: &mut BufferProducer, sample_n: SampleType, info: &cpal::OutputCallbackInfo) {
+    let os_instant = std::time::Instant::now();
+    let latency = info.timestamp().playback.duration_since(&info.timestamp().callback);
+
+    prod.update(
+        SampleTimestamp::new(os_instant, sample_n)
+    );
 }
 
 pub fn open<S, E>(
@@ -32,8 +46,8 @@ where
     S: Source<Item = rodio::Sample> + Send + 'static,
     E: FnMut(cpal::StreamError) + Send + 'static,
 {
-    let (mut prod, cons): (BufferProducer, BufferConsumer) = crate::new_sample_timestamp_buffer(100);
-    let sample_counter = SampleCounter::new(config.sample_rate as u32, cons);
+    let (mut prod, mut cons): (BufferProducer, BufferConsumer) = crate::new_sample_timestamp_buffer(100, std::time::Instant::now());
+    let sample_counter = Arc::new(AtomicU64::new(0));
 
     let sample_format = config.sample_format;
     let channels = config.channel_count as SampleType;
@@ -45,7 +59,7 @@ where
         cpal::SampleFormat::F32 => device.build_output_stream::<f32, _, _>(
             &config,
             move |data, info| {
-                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                update_playback_position(&mut prod, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut()
@@ -57,7 +71,7 @@ where
         cpal::SampleFormat::F64 => device.build_output_stream::<f64, _, _>(
             &config,
             move |data, info| {
-                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                update_playback_position(&mut prod, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut()
@@ -69,7 +83,7 @@ where
         cpal::SampleFormat::I8 => device.build_output_stream::<i8, _, _>(
             &config,
             move |data, info| {
-                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                update_playback_position(&mut prod, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut()
@@ -81,7 +95,7 @@ where
         cpal::SampleFormat::I16 => device.build_output_stream::<i16, _, _>(
             &config,
             move |data, info| {
-                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                update_playback_position(&mut prod, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut()
@@ -93,7 +107,7 @@ where
         cpal::SampleFormat::I32 => device.build_output_stream::<i32, _, _>(
             &config,
             move |data, info| {
-                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                update_playback_position(&mut prod, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut()
@@ -105,7 +119,7 @@ where
         cpal::SampleFormat::I64 => device.build_output_stream::<i64, _, _>(
             &config,
             move |data, info| {
-                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                update_playback_position(&mut prod, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut()
@@ -117,7 +131,7 @@ where
         cpal::SampleFormat::U8 => device.build_output_stream::<u8, _, _>(
             &config,
             move |data, info| {
-                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                update_playback_position(&mut prod, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut().for_each(|d| {
@@ -133,7 +147,7 @@ where
         cpal::SampleFormat::U16 => device.build_output_stream::<u16, _, _>(
             &config,
             move |data, info| {
-                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                update_playback_position(&mut prod, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut().for_each(|d| {
@@ -149,7 +163,7 @@ where
         cpal::SampleFormat::U32 => device.build_output_stream::<u32, _, _>(
             &config,
             move |data, info| {
-                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                update_playback_position(&mut prod, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut().for_each(|d| {
@@ -165,7 +179,7 @@ where
         cpal::SampleFormat::U64 => device.build_output_stream::<u64, _, _>(
             &config,
             move |data, info| {
-                prod.add(SampleTimestamp::new(info.timestamp().callback, sample_n));
+                update_playback_position(&mut prod, sample_n, info);
                 sample_n += data.len() as SampleType / channels;
 
                 data.iter_mut().for_each(|d| {
@@ -189,6 +203,7 @@ where
         StreamHandle {
             _handle: handle,
             sample_counter,
+            sample_timestamp_consumer: cons,
         }
     )
 }
