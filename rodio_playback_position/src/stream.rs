@@ -1,3 +1,4 @@
+//! The audio stream and its handle.
 use std::time::Instant;
 
 use rtsan_standalone::nonblocking;
@@ -24,6 +25,12 @@ pub struct StreamHandle {
 
 impl StreamHandle {
     /// Returns an interpolated value for the high-precision sample counter tracking this stream.
+    ///
+    /// This method provides a more accurate estimation of the playback position than what is
+    /// typically available from audio APIs. It does this by interpolating between the audio
+    /// buffer updates, taking into account the time since the last update.
+    ///
+    /// The sample count is always increasing to prevent jitter.
     pub fn sample_count(&mut self) -> u64 {
         let now = Instant::now();
         let timestamp_now = now.duration_since(self.start_time);
@@ -41,6 +48,10 @@ impl StreamHandle {
     }
 }
 
+/// Updates the playback position in a non-blocking way.
+///
+/// This function is called from the audio thread to update the shared buffer with the latest
+/// playback position information.
 #[inline]
 #[nonblocking]
 fn update_playback_position(
@@ -61,6 +72,47 @@ fn update_playback_position(
     prod.update(SampleTimestamp::new(timestamp_now, latency, sample_n));
 }
 
+/// Opens an audio output stream and returns a handle to it.
+///
+/// This is the main entry point for this crate. It creates a `cpal` audio output stream and
+/// returns a [`StreamHandle`] that can be used to get the playback position.
+///
+/// # Arguments
+///
+/// * `device` - The `cpal` output device to use.
+/// * `config` - The configuration for the output stream.
+/// * `source` - The `rodio` source to play.
+/// * `error_callback` - A callback that will be called if a stream error occurs.
+///
+/// # Example
+///
+/// ```no_run
+/// use std::time::Duration;
+/// use rodio::source::SineWave;
+/// use rodio::Source;
+/// use rodio_playback_position::{OutputStreamConfig, stream};
+///
+/// fn main() -> Result<(), Box<dyn std::error::Error>> {
+///     let host = cpal::default_host();
+///     let device = host.default_output_device().expect("no output device available");
+///     let config = OutputStreamConfig::from(&device.default_output_config().unwrap());
+///     let source = SineWave::new(440.0).take_duration(Duration::from_secs(5));
+///
+///     let mut stream_handle = stream::open(
+///         &device,
+///         &config,
+///         source,
+///         |err| eprintln!("stream error: {}", err),
+///     )?;
+///
+///     for _ in 0..5 {
+///         println!("Sample count: {}", stream_handle.sample_count());
+///         std::thread::sleep(Duration::from_millis(100));
+///     }
+///
+///     Ok(())
+/// }
+/// ```
 pub fn open<S, E>(
     device: &cpal::Device,
     config: &OutputStreamConfig,
