@@ -17,7 +17,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rodio_playback_position = "0.1.0" 
+rodio_playback_position = "0.1.2" 
 rodio = "0.21.1" 
 cpal = "0.16.0"
 ```
