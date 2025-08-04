@@ -6,7 +6,7 @@ description = "An alternative playback backend for rodio sources with accurate p
 license = "MIT"
 repository = "https://github.com/linobigatti/coop-editor/tree/master/rodio_playback_position" 
 readme = "README.md"
-keywords = ["rodio", "audio", "playback", "audio-synchronization"]
+keywords = ["rodio", "audio", "playback", "audio-sync"]
 categories = ["multimedia::audio", "game-development"]
 
 [dependencies]
