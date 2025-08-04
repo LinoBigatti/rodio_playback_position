@@ -40,7 +40,7 @@ impl StreamHandle {
         let sample_n = timestamp_data.interpolate(timestamp_now, self.config.sample_rate);
 
         // Make sure samples are always increasing to prevent jitter.
-        if self.last_sample_number > sample_n {
+        if sample_n > self.last_sample_number {
             self.last_sample_number = sample_n;
         }
 
@@ -88,6 +88,7 @@ fn update_playback_position(
 ///
 /// ```no_run
 /// use std::time::Duration;
+/// use cpal::traits::{HostTrait, DeviceTrait};
 /// use rodio::source::SineWave;
 /// use rodio::Source;
 /// use rodio_playback_position::{OutputStreamConfig, stream};
@@ -95,7 +96,7 @@ fn update_playback_position(
 /// fn main() -> Result<(), Box<dyn std::error::Error>> {
 ///     let host = cpal::default_host();
 ///     let device = host.default_output_device().expect("no output device available");
-///     let config = OutputStreamConfig::from(&device.default_output_config().unwrap());
+///     let config = OutputStreamConfig::from(device.default_output_config().unwrap());
 ///     let source = SineWave::new(440.0).take_duration(Duration::from_secs(5));
 ///
 ///     let mut stream_handle = stream::open(

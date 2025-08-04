@@ -27,6 +27,7 @@ For more information, see the [Docs](https://docs.rs/rodio_scheduler), as well a
 
 ```rust
 use std::time::Duration;
+use cpal::traits::{HostTrait, DeviceTrait};
 use rodio::source::SineWave;
 use rodio::Source;
 use rodio_playback_position::{OutputStreamConfig, stream};
@@ -38,7 +39,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Using output device: {}", device.name()?);
 
     // Create a config for the stream.
-    let config = OutputStreamConfig::from(&device.default_output_config().unwrap());
+    let config = OutputStreamConfig::from(device.default_output_config().unwrap());
 
     // Create a source.
     let source = SineWave::new(440.0).take_duration(Duration::from_secs(5));

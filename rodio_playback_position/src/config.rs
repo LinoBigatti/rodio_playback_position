@@ -1,6 +1,6 @@
 use rodio::{ChannelCount, SampleRate};
 
-use cpal::{BufferSize, SampleFormat, StreamConfig};
+use cpal::{BufferSize, SampleFormat, StreamConfig, SupportedStreamConfig};
 
 const HZ_48000: u32 = 48_000;
 
@@ -32,6 +32,25 @@ impl From<&OutputStreamConfig> for StreamConfig {
             sample_rate: cpal::SampleRate(config.sample_rate),
             buffer_size: config.buffer_size,
         }
+    }
+}
+
+impl From<StreamConfig> for OutputStreamConfig {
+    fn from(config: StreamConfig) -> Self {
+        OutputStreamConfig {
+            channel_count: config.channels as ChannelCount,
+            sample_rate: config.sample_rate.0,
+            buffer_size: config.buffer_size,
+            sample_format: SampleFormat::F32,
+        }
+    }
+}
+
+impl From<SupportedStreamConfig> for OutputStreamConfig {
+    fn from(config: SupportedStreamConfig) -> Self {
+        OutputStreamConfig::from(
+            Into::<StreamConfig>::into(config)
+        )
     }
 }
 

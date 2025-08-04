@@ -1,6 +1,6 @@
 [package]
 name = "rodio_playback_position"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "An alternative playback backend for rodio sources with accurate position tracking."
 license = "MIT"

@@ -23,6 +23,7 @@ For more information on configuring the audio, see the [cpal Docs](https://docs.
 
 ```no_run
 use std::time::Duration;
+use cpal::traits::{HostTrait, DeviceTrait};
 use rodio::source::SineWave;
 use rodio::Source;
 use rodio_playback_position::{OutputStreamConfig, stream};
@@ -34,7 +35,7 @@ use rodio_playback_position::{OutputStreamConfig, stream};
     println!("Using output device: {}", device.name()?);
 
     // Create a config for the stream.
-    let config = OutputStreamConfig::from(&device.default_output_config().unwrap());
+    let config = OutputStreamConfig::from(device.default_output_config().unwrap());
 
     // Create a source.
     let source = SineWave::new(440.0).take_duration(Duration::from_secs(5));
