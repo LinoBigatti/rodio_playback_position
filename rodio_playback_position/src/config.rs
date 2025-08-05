@@ -48,9 +48,7 @@ impl From<StreamConfig> for OutputStreamConfig {
 
 impl From<SupportedStreamConfig> for OutputStreamConfig {
     fn from(config: SupportedStreamConfig) -> Self {
-        OutputStreamConfig::from(
-            Into::<StreamConfig>::into(config)
-        )
+        OutputStreamConfig::from(Into::<StreamConfig>::into(config))
     }
 }
 
