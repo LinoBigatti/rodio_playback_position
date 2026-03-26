@@ -35,14 +35,10 @@ impl SampleTimestamp {
 
     #[inline]
     pub fn interpolate(&self, current_timestamp: Duration, sample_rate: u32) -> SampleType {
-        let _sample_rate = sample_rate as SampleType;
-
         let mut sample_n: SampleType = self.sample_n;
-
-        // Potentially truncating if SampleType is not u128. Unlikely to appear in real life
-        // scenarios, as the time difference should usually be less than a second.
-        let time_diff_nanos = self.timestamp.abs_diff(current_timestamp).as_nanos() as SampleType;
-        let time_diff_samples = _sample_rate * time_diff_nanos / NANOS_PER_SEC;
+        
+        let time_diff = self.timestamp.abs_diff(current_timestamp);
+        let time_diff_samples = duration_to_samples(time_diff, sample_rate);
 
         if current_timestamp < self.timestamp {
             sample_n -= time_diff_samples;
@@ -51,7 +47,7 @@ impl SampleTimestamp {
         }
 
         // Same truncating considerations as above. Even more unlikely to happen in real life.
-        let latency_samples = _sample_rate * self.latency.as_nanos() as SampleType / NANOS_PER_SEC;
+        let latency_samples = self.latency_samples(sample_rate);
 
         // Apply audio latency.
         if sample_n > latency_samples {
@@ -63,4 +59,24 @@ impl SampleTimestamp {
 
         sample_n
     }
+
+    pub fn latency(&self) -> Duration {
+        self.latency
+    }
+
+    pub fn latency_samples(&self, sample_rate: u32) -> SampleType {
+        duration_to_samples(self.latency, sample_rate)
+    }
+}
+
+pub fn duration_to_samples(duration: Duration, sample_rate: u32) -> SampleType {
+    let sample_rate: SampleType = sample_rate.try_into().expect("SampleType should be u64 or u128.");
+
+    let duration_secs: SampleType = duration.as_secs().try_into().expect("SampleType should be u64 or u128.");
+    let duration_nanos: SampleType = duration.subsec_nanos().try_into().expect("SampleType should be u64 or u128.");
+
+    let samples_secs = duration_secs * sample_rate;
+    let samples_nanos = (duration_nanos * sample_rate) / NANOS_PER_SEC;
+
+    samples_secs + samples_nanos
 }

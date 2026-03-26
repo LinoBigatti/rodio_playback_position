@@ -63,6 +63,28 @@ impl StreamHandle {
 
         timestamp_data.interpolate(timestamp_now, self.config.sample_rate)
     }
+
+    /// Returns the current latency as reported by CPAL. 
+    ///
+    /// This is already accounted for in [`sample_count`] and [`sample_count_at`], so the
+    /// main usecases for this method are debugging audio latency and synchronizing with
+    /// the audio thread.
+    pub fn latency(&mut self) -> std::time::Duration {
+        let timestamp_data = self.sample_timestamp_consumer.newest();
+
+        timestamp_data.latency()
+    }
+
+    /// Returns the current latency as reported by CPAL, in samples. 
+    ///
+    /// This is already accounted for in [`sample_count`] and [`sample_count_at`], so the
+    /// main usecases for this method are debugging audio latency and synchronizing with
+    /// the audio thread.
+    pub fn latency_samples(&mut self) -> SampleType {
+        let timestamp_data = self.sample_timestamp_consumer.newest();
+
+        timestamp_data.latency_samples(self.config.sample_rate)
+    }
 }
 
 /// Updates the playback position in a non-blocking way.
