@@ -1,6 +1,6 @@
 use rtsan_standalone::nonblocking;
 
-use crate::SampleTimestamp;
+use crate::sample::SampleTimestamp;
 
 /// A lock-free buffer producer for `SampleTimestamp`s, designed for a single producer thread.
 pub struct BufferProducer {

@@ -62,7 +62,7 @@ use rodio_playback_position::{OutputStreamConfig, stream};
 */
 
 /// The type used to count samples across the crate.
-type SampleType = u64;
+pub type SampleType = u64;
 
 mod config;
 pub use config::OutputStreamConfig;
@@ -70,11 +70,12 @@ pub use config::OutputStreamConfig;
 mod error;
 pub use error::StreamError;
 
-mod sample;
-use sample::SampleTimestamp;
+pub mod sample;
 
 mod sample_timestamp_buffer;
 use sample_timestamp_buffer::{BufferConsumer, BufferProducer, new_sample_timestamp_buffer};
 
 pub mod stream;
 pub use stream::StreamHandle;
+
+

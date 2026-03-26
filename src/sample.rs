@@ -40,13 +40,12 @@ impl SampleTimestamp {
         let time_diff = self.timestamp.abs_diff(current_timestamp);
         let time_diff_samples = duration_to_samples(time_diff, sample_rate);
 
-        if current_timestamp < self.timestamp {
-            sample_n -= time_diff_samples;
+        sample_n = if current_timestamp < self.timestamp {
+            sample_n.checked_sub(time_diff_samples).unwrap_or(0)
         } else {
-            sample_n += time_diff_samples;
-        }
+            sample_n.checked_add(time_diff_samples).unwrap_or(SampleType::MAX)
+        };
 
-        // Same truncating considerations as above. Even more unlikely to happen in real life.
         let latency_samples = self.latency_samples(sample_rate);
 
         // Apply audio latency.
@@ -60,15 +59,19 @@ impl SampleTimestamp {
         sample_n
     }
 
+    #[inline]
     pub fn latency(&self) -> Duration {
         self.latency
     }
 
+    #[inline]
     pub fn latency_samples(&self, sample_rate: u32) -> SampleType {
         duration_to_samples(self.latency, sample_rate)
     }
 }
 
+/// Compute the length, in samples, of a given Duration.
+#[inline]
 pub fn duration_to_samples(duration: Duration, sample_rate: u32) -> SampleType {
     let sample_rate: SampleType = sample_rate.try_into().expect("SampleType should be u64 or u128.");
 

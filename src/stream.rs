@@ -9,7 +9,7 @@ use cpal::Sample;
 use cpal::traits::{DeviceTrait, StreamTrait};
 
 use crate::{
-    BufferConsumer, BufferProducer, OutputStreamConfig, SampleTimestamp, SampleType, StreamError,
+    BufferConsumer, BufferProducer, OutputStreamConfig, sample::SampleTimestamp, SampleType, StreamError,
 };
 
 /// A handle for accessing and communicating with the audio stream.
