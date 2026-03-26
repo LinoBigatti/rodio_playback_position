@@ -30,8 +30,8 @@ impl StreamHandle {
     /// typically available from audio APIs. It does this by interpolating between the audio
     /// buffer updates, taking into account the time since the last update.
     ///
-    /// The sample count is always increasing to prevent jitter.
-    pub fn sample_count(&mut self) -> u64 {
+    /// The sample count is always increasing to prevent jitter. This function is not pure.
+    pub fn sample_count(&mut self) -> SampleType {
         let now = Instant::now();
         let timestamp_now = now.duration_since(self.start_time);
 
@@ -45,6 +45,23 @@ impl StreamHandle {
         }
 
         self.last_sample_number
+    }
+
+    /// Returns an interpolated sample counter value for a given Instant.
+    ///
+    /// This is a pure version of sample_count, which does not internally call Instant::now().
+    /// The sample count is interpolated without increasing the internal counter, so no jitter
+    /// correction is applied.
+    ///
+    /// # Arguments
+    ///
+    /// * `time` - Instant value at which to measure the sample count.
+    pub fn sample_count_at(&mut self, time: Instant) -> SampleType {
+        let timestamp_now = time.duration_since(self.start_time);
+
+        let timestamp_data = self.sample_timestamp_consumer.newest();
+
+        timestamp_data.interpolate(timestamp_now, self.config.sample_rate)
     }
 }
 

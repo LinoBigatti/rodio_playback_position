@@ -19,7 +19,7 @@ pub struct SampleTimestamp {
     sample_n: SampleType,
 
     /// The predicted latency of the audio stream. This is the difference between when the samples
-    /// are sent to be processend and the moment they will be played back by the output device.
+    /// are sent to be processed and the moment they will be played back by the output device.
     latency: Duration,
 }
 

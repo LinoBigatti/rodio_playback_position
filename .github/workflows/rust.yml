@@ -1,4 +1,4 @@
-name: rodio_scheduler Tests
+name: rodio_playback_position Tests
 
 on:
   push:

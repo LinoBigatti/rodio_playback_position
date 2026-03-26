@@ -2,7 +2,7 @@ use rtsan_standalone::nonblocking;
 
 use crate::SampleTimestamp;
 
-/// A lock-free ring buffer producer for `SampleTimestamp`s, designed for a single producer thread.
+/// A lock-free buffer producer for `SampleTimestamp`s, designed for a single producer thread.
 pub struct BufferProducer {
     producer: triple_buffer::Input<SampleTimestamp>,
 }
@@ -17,7 +17,7 @@ impl BufferProducer {
     }
 }
 
-/// A lock-free ring buffer consumer for `SampleTimestamp`s, designed to be queried by non-critical threads.
+/// A lock-free buffer consumer for `SampleTimestamp`s, designed to be queried by non-critical threads.
 pub struct BufferConsumer {
     consumer: triple_buffer::Output<SampleTimestamp>,
 }
