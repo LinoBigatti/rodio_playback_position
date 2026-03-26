@@ -15,6 +15,9 @@ The reported sample count is interpolated between audio buffer updates, providin
 smoother and higher-precision estimate of the playback position than what is typically
 available from audio APIs.
 
+The `u128` feature flag can be enabled to use `u128` as the `SampleType`, increasing 
+the maximum uptime of the library, at the cost of increased memory usage.
+
 ## Example
 
 The following example shows how to use the library to start playback of a sine wave and keep track of the current playback position.
@@ -62,7 +65,12 @@ use rodio_playback_position::{OutputStreamConfig, stream};
 */
 
 /// The type used to count samples across the crate.
+#[cfg(not(feature = "u128"))]
 pub type SampleType = u64;
+
+/// The type used to count samples across the crate.
+#[cfg(feature = "u128")]
+pub type SampleType = u128;
 
 mod config;
 pub use config::OutputStreamConfig;

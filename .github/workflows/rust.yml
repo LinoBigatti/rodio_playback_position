@@ -56,7 +56,11 @@ jobs:
       run: cargo build --verbose
     - name: Run cargo test (debug)
       run: cargo test --verbose
+    - name: Run cargo test (debug) (u128)
+      run: cargo test --verbose --features=u128
     - name: Run cargo build (release)
       run: cargo build --release --verbose
     - name: Run cargo test (release)
       run: cargo test --release --verbose
+    - name: Run cargo test (release) (u128)
+      run: cargo test --release --verbose --features=u128

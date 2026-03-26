@@ -17,4 +17,5 @@ rtsan-standalone = "0.2.0"
 triple_buffer = "8.1.1"
 
 [features]
+u128 = []
 default = []

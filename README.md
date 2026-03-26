@@ -17,10 +17,15 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rodio_playback_position = "0.1.2" 
+rodio_playback_position = { version = "0.1.3" }
+# Or alternatively, for 128 bit sample counters:
+#rodio_playback_position = { version = "0.1.3", features = ["u128"] }
 rodio = "0.21.1" 
 cpal = "0.16.0"
 ```
+
+The `u128` feature flag can be enabled to use `u128` as the `SampleType`, increasing 
+the maximum uptime of the library, at the cost of increased memory usage.
 
 Here is an example of how to use the library to start playback and keep track of the current playback position. 
 For more information, see the [Docs](https://docs.rs/rodio_scheduler), as well as the [cpal Docs](https://docs.rs/cpal).
