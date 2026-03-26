@@ -11,17 +11,24 @@ This is useful for applications that need to sync visuals or other events with a
 such as rhythm games or music players. For scheduling and synchronizing the playback of multiple sources
 simultaneously, see the [rodio_scheduler](https://crates.io/crates/rodio_scheduler) crate.
 
+## CPAL/rodio compatibility
+
+|   `rodio_playback_position` version | `cpal` version | `rodio` version |
+|-------------------------------------|----------------|-----------------|
+| 0.1.2                               | 0.16.0         | 0.21.1          |
+| 0.2.0                               | 0.17.3         | 0.22.2          |
+
 ## Usage
 
 Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rodio_playback_position = { version = "0.1.3" }
+rodio_playback_position = { version = "0.2.0" }
 # Or alternatively, for 128 bit sample counters:
-#rodio_playback_position = { version = "0.1.3", features = ["u128"] }
-rodio = "0.21.1" 
-cpal = "0.16.0"
+#rodio_playback_position = { version = "0.2.0", features = ["u128"] }
+rodio = "0.22.2" 
+cpal = "0.17.3"
 ```
 
 The `u128` feature flag can be enabled to use `u128` as the `SampleType`, increasing 

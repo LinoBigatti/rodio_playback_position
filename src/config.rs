@@ -1,5 +1,3 @@
-use rodio::{ChannelCount, SampleRate};
-
 use cpal::{BufferSize, SampleFormat, StreamConfig, SupportedStreamConfig};
 
 const HZ_48000: u32 = 48_000;
@@ -8,8 +6,8 @@ const HZ_48000: u32 = 48_000;
 /// doesn't include this struct when the `playback` feature is disabled.
 #[derive(Copy, Clone, Debug)]
 pub struct OutputStreamConfig {
-    pub channel_count: ChannelCount,
-    pub sample_rate: SampleRate,
+    pub channel_count: u16,
+    pub sample_rate: u32,
     pub buffer_size: BufferSize,
     pub sample_format: SampleFormat,
 }
@@ -28,8 +26,8 @@ impl Default for OutputStreamConfig {
 impl From<&OutputStreamConfig> for StreamConfig {
     fn from(config: &OutputStreamConfig) -> Self {
         cpal::StreamConfig {
-            channels: config.channel_count as cpal::ChannelCount,
-            sample_rate: cpal::SampleRate(config.sample_rate),
+            channels: config.channel_count,
+            sample_rate: config.sample_rate,
             buffer_size: config.buffer_size,
         }
     }
@@ -38,8 +36,8 @@ impl From<&OutputStreamConfig> for StreamConfig {
 impl From<StreamConfig> for OutputStreamConfig {
     fn from(config: StreamConfig) -> Self {
         OutputStreamConfig {
-            channel_count: config.channels as ChannelCount,
-            sample_rate: config.sample_rate.0,
+            channel_count: config.channels,
+            sample_rate: config.sample_rate,
             buffer_size: config.buffer_size,
             sample_format: SampleFormat::F32,
         }
@@ -54,12 +52,12 @@ impl From<SupportedStreamConfig> for OutputStreamConfig {
 
 impl OutputStreamConfig {
     /// Access the output stream config's channel count.
-    pub fn channel_count(&self) -> ChannelCount {
+    pub fn channel_count(&self) -> u16 {
         self.channel_count
     }
 
     /// Access the output stream config's sample rate.
-    pub fn sample_rate(&self) -> SampleRate {
+    pub fn sample_rate(&self) -> u32 {
         self.sample_rate
     }
 

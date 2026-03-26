@@ -1,6 +1,6 @@
 [package]
 name = "rodio_playback_position"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2024"
 description = "An alternative playback backend for rodio sources with accurate position tracking."
 license = "MIT"
@@ -11,8 +11,8 @@ keywords = ["rodio", "audio", "playback", "audio-sync"]
 categories = ["multimedia::audio", "game-development"]
 
 [dependencies]
-cpal = "0.16.0"
-rodio = { version = "0.21.1", default-features = false }
+cpal = "0.17.3"
+rodio = { version = "0.22.2", default-features = false }
 rtsan-standalone = "0.2.0"
 triple_buffer = "8.1.1"
 
